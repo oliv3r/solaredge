@@ -114,8 +114,11 @@ def readMsg(inFile, recFile, mode):
             else:
                 msg += nextByte
         msg = msg[:-magicLen]  # strip the magic number from the end
-    if len(msg) > 0:  # don't log zero length messages
-        logger.message("-->", dataInSeq, magic + msg, inFile.name)
+
+    if len(msg) < 1:  # don't log zero length messages
+        return ("", eof)
+
+    logger.message("-->", dataInSeq, magic + msg, inFile.name)
     if recFile:
         recSeq += 1
         logger.message("<--", recSeq, magic + msg, recFile.name)
