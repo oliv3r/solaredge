@@ -26,5 +26,18 @@ do
     cat "test/json/${SAMPLE}.json" | conversion/se2csv.py -p "${TMPSE2CSV}/${SAMPLE}" -t
     diff "${TMP}/se2csv" "test/csv/${SAMPLE}/" -w
 
+    if ! ./semonitor.py -r "${TMP}/${SAMPLE}.re.rec" -o "${TMP}/${SAMPLE}.re.json" "test/rec/${SAMPLE}.rec" ${KEY_OPTION}; then
+        echo "Failed to run semonitor on rec file."
+        exit 1
+    fi
+    if ! cmp -l "${TMP}/${SAMPLE}.re.rec" "test/rec/${SAMPLE}.rec"; then
+        echo "Failed to compare re.rec file."
+        exit 1
+    fi
+    if ! diff "${TMP}/${SAMPLE}.re.json" "test/json/${SAMPLE}.json"; then
+        echo "Failed to compare re.JSON file."
+        exit 1
+    fi
+
     rm -rf "${TMP}"
 done
