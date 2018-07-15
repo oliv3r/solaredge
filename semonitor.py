@@ -2,6 +2,7 @@
 
 # SolarEdge inverter performance monitoring using the SolarEdge protocol
 
+import os
 import time
 import threading
 import sys
@@ -42,11 +43,19 @@ def terminate(code=0, msg=""):
 # process the input data
 def readData(args, mode, dataFile, recFile, outFile, keyStr):
     eof = False
+    if recFile and os.path.isfile(recFile.name):
+        print os.path.dirname(recFile.name)
+    if outFile and os.path.isfile(outFile.name):
+        print os.path.dirname(outFile.name)
+    old_filename = ""
     updateBuf = list('\x00' * UPDATE_SIZE) if args.updatefile else []
     if mode.passiveMode:
         # skip data until the start of the first complete message
         (msg, eof) = se.msg.readMsg(dataFile, recFile, mode)  
     while not eof:
+        new_filename = time.strftime("%Y-%m-%d")
+        if new_filename != old_filename:
+            old_filename = new_filename 
         (msg, eof) = se.msg.readMsg(dataFile, recFile, mode)
         if eof:  # end of file
             logger.info("End of file")
@@ -206,7 +215,9 @@ def nextSeq():
 if __name__ == "__main__":
     # get the command line arguments and run mode
     (args, mode) = se.env.getArgs()
-    
+
+    start_date = time.strftime("%Y-%m-%d")
+
     # open the specified data source
     logger.info("opening %s", args.datasource)
     if args.datasource == "network":
@@ -225,17 +236,30 @@ if __name__ == "__main__":
     keyStr = args.keyfile.read().rstrip("\n") if args.keyfile else None
 
     # open the output files
-    recFile = se.files.openOutFile(args.record, "a" if args.append else "w")
+    record_filename = args.record
+    if args.split and record_filename is not None:
+        if not os.path.exists(out_filename):
+            os.mkdir(record_filename)
+        record_filename = record_filename + "/" + start_date + ".rec"
+    recFile = se.files.openOutFile(record_filename, "a" if args.append else "w")
+
     if args.outfile == "stdout":
         outFile = sys.stdout
     else:
-        outFile = se.files.openOutFile(args.outfile, "a" if args.append else "w")
+        out_filename = args.outfile
+        if not os.path.exists(out_filename):
+            os.mkdir(out_filename)
+        if args.split and out_filename is not None:
+            out_filename = out_filename + "/" + start_date + ".json"
+        outFile = se.files.openOutFile(out_filename, "a" if args.append else "w")
 
     # figure out what to do based on the mode of operation
     if mode.passiveMode:  # only reading from file or serial device
+        print "passive"
         # read until eof then terminate
         readData(args, mode, dataFile, recFile, outFile, keyStr)
     else:  # reading and writing to network or serial device
+        print "not passive"
         if args.commands:  # commands were specified
             # perform commands then terminate
             doCommands(args, mode, dataFile, recFile, outFile)

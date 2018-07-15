@@ -234,6 +234,7 @@ SolarEdge inverter performance monitoring using the SolarEdge protocol.
                          (default: 22222,22221,80)
     -r recfile           file to record all incoming and outgoing messages to
     -s inv[,inv,...]     comma delimited list of SolarEdge slave inverter IDs
+    --split              split files (-o, -r) by date (filename will be used as dirname)
     -t 2|4|n             data source type (2=RS232, 4=RS485, n=network)
     -u updatefile        file to write firmwate update to (experimental)
     -v                   verbose output
